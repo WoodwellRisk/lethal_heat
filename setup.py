@@ -1,0 +1,1 @@
+#!/usr/bin/env pythonfrom setuptools import setupimport os#from src.config import envif __name__ == "__main__":    setup()
