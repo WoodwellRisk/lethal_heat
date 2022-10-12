@@ -1,5 +1,5 @@
 # lethal_heat
-Small set of code files for calculate lethal heat stress from Temperature and RH
+Python object for calculating lethal heat stress from Temperature and RH
 
 ## Installation
 Clone this repository to somewhere you like.
