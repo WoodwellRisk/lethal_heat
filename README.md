@@ -54,5 +54,6 @@ uncomputed.to_netcdf(fp_out)
 Or alternatively, you can do it straight from file (netcdf only)
 ```
 Vecellio22.calculate_from_files( fp_temperature, 
-                                 fp_humidity, fp_out )
+                                 fp_humidity, fp_out,
+                                 chunks = {'time':100})
 ```
