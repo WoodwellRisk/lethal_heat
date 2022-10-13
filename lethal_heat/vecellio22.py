@@ -20,7 +20,7 @@ class Vecellio22():
         # Test if a set of temperatures and relative humidities are lethal
         temperature = [35, 40, 41, 45]
         rel_humidity = [60, 70, 80, 90]
-        v22.isLethal(temperature, rel_humidity)
+        v22.is_lethal(temperature, rel_humidity)
         
         # Plot lethal region with temperature, humidity pairs
         v22.plot( tdb = temperature,
@@ -54,7 +54,7 @@ class Vecellio22():
                                                bounds_error=False, 
                                                **kwargs)
             
-    def isLethal(self, tdb, rh):
+    def is_lethal(self, tdb, rh):
         ''' Returns whether heat is lethal for given tdb (temperature)
         and rh (relative humidity) arrays or scalars. '''
         return rh > self.interp_func(tdb)
@@ -89,8 +89,8 @@ class Vecellio22():
     def map_to_data(self, tdb, rh):
         ''' Lazily calculates lethal heat over two chunked xarray datasets '''
         ds_out = xr.Dataset(tdb.coords)
-        mapped = da.map_blocks(self.islethal, tdb.data, rh.data)
-        ds_out['lethal_heat'] = (tdb.dims, mapped) 
+        mapped = da.map_blocks(self.is_lethal, tdb.data, rh.data)
+        ds_out['lethal_heat'] = (list(tdb.dims), mapped) 
         return ds_out
     
     @classmethod
