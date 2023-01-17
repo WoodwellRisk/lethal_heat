@@ -5,6 +5,7 @@ import dask.array as da
 import xarray as xr
 import multiprocessing as mp
 from dask.distributed import Client, LocalCluster
+import shapely.geometry as geom
 
 class Vecellio22():
     '''
@@ -59,14 +60,64 @@ class Vecellio22():
         and rh (relative humidity) arrays or scalars. '''
         return rh > self.interp_func(tdb)
     
-    def plot(self, tdb=None, rh=None, figsize = (7,7)):
+    def distance_from_function(self, tdb, rh):
+        ''' Returns a numerical estimate of the minimum distance from the
+        function used by this lethal heat instance. Output is signed according
+        to whether the point is lethal or not'''
+        
+        # Check type of inputs are array. If not, make it so
+        if not hasattr(tdb, "__len__"):
+            tdb = np.array([tdb])
+        if not hasattr(rh, "__len__"):
+            rh = np.array([rh])
+        n_pts = len(tdb)
+        
+        # Create curve coordinates as a shapely LineString
+        x_vals = np.arange(0, 60, 0.1)
+        y_vals = self.interp_func(x_vals)
+        coords = [ [x_vals[ii], y_vals[ii]] for ii in range(len(x_vals)) ]
+        curve = geom.LineString(coords)
+        
+        # Create list of input points and use to calculate distances
+        point_list = [ geom.Point( tdb[ii], rh[ii] ) for ii in range(n_pts) ]
+        distances = np.array( [ pt.distance(curve) for pt in point_list] )
+        
+        # Apply a maximum distance
+        distances[distances > 1000] = 1000
+        
+        # Work out signs of output
+        islethal = self.is_lethal(tdb, rh).astype(int)
+        islethal[islethal==0] = -1
+        distances = distances*islethal
+        
+        # Filter NaNs
+        distances[np.isnan(tdb)] = np.nan
+        distances[np.isnan(rh)] = np.nan
+        
+        # If only one input, then return a scalar
+        if n_pts == 1:
+            return distances[0]
+        else:
+            return distances
+    
+    def plot(self, tdb=None, rh=None, figsize = (7,7), tbounds = None, rbounds = None):
         ''' Plots the lethal region on a 2D plot.
         Optionally, you can add temperature, humidity pairs to see where
         they lie'''
-        td_min = np.min(self.interp_td)
-        td_max = np.max(self.interp_td)
-        rh_min = np.min(self.interp_rh)
-        rh_max = np.max(self.interp_rh)
+        
+        if tbounds is None:
+            td_min = np.min(self.interp_td)
+            td_max = np.max(self.interp_td)
+        else: 
+            td_min = tbounds[0]
+            td_max = tbounds[1]
+            
+        if rbounds is None:
+            rh_min = np.min(self.interp_rh)
+            rh_max = np.max(self.interp_rh)
+        else:
+            rh_min = rbounds[0]
+            rh_max = rbounds[1]
         rh_range = rh_max - rh_min
         
         f,a = plt.subplots(1,1, figsize=figsize)
@@ -78,7 +129,7 @@ class Vecellio22():
         a.plot(x, y, linewidth=3, linestyle='--', c='r', alpha=0.5)
         a.scatter(self.interp_td, self.interp_rh, marker='s', s=100, c='r')
         a.set_xlim(td_min, td_max)
-        a.set_ylim(rh_min - 0.2*rh_range, rh_max + 0.2*rh_range)
+        a.set_ylim(rh_min, rh_max)
         a.grid()
         a.set_xlabel('Dry Bulb Temperature', fontsize=15)
         a.set_ylabel('Relative Humidity', fontsize=15)
@@ -88,10 +139,11 @@ class Vecellio22():
         
     def map_to_data(self, tdb, rh):
         ''' Lazily calculates lethal heat over two chunked xarray datasets '''
-        ds_out = xr.Dataset(tdb.coords)
-        mapped = da.map_blocks(self.is_lethal, tdb.data, rh.data)
-        ds_out['lethal_heat'] = (list(tdb.dims), mapped) 
-        return ds_out
+        #ds_out = xr.Dataset(tdb.coords)
+        mapped = xr.map_blocks(self.is_lethal, tdb, [rh])
+        #ds_out['lethal_heat'] = (list(tdb.dims), mapped) 
+        #return ds_out
+        return mapped
     
     @classmethod
     def calculate_from_files(cls, fp_td, fp_rh, fp_out = None,
