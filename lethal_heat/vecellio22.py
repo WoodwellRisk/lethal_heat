@@ -145,6 +145,68 @@ class Vecellio22():
         #return ds_out
         return mapped
     
+    def time_over_lh(self, tmean, rmean, tamp, ramp):
+        ''' Get number of minutes over lethal heat for a given day.
+            tmean - temperature mean (daily)
+            rmean - RH mean (daily)
+            tamp - temperature amplitude (daily) (half the range)
+            ramp - RH amplituce
+            v22 Vecellio22 lethal heat object.'''
+
+        if rmean <= 100:
+
+            # Determine time frequency (1 minute)
+            x = np.linspace(0, 2*np.pi, 24*60)
+
+            # Create time series of t and rh, and get lethal heat
+            ts_t = tamp * np.sin(x) + tmean
+            ts_rh = np.clip(-ramp * np.sin(x) + rmean, 0, 100)
+            ts_lh = self.is_lethal(ts_t, ts_rh)
+
+            # Return number of minutes for this day over threshold
+            return np.nansum(ts_lh)
+        else:
+            return np.nan
+        
+    def create_lookup_table( self, tmean, rmean, tamp, ramp ):
+        ''' Creates a lookup table for quickly referencing the number of hours
+            per day that are lethal, according to this object.
+            
+            args
+             tmean :: array of temperature means
+             rmean :: array of RH means
+             tamp :: array of temperature amplitudes
+             ramp :: array of RH amplitudes
+             
+            output
+             4-dimensional lookup table with dimension (tmean, rmean, tamp, ramp)
+             '''
+        
+        # Get sizes of inputs and create empty output array
+        n_tmean = len(tmean)
+        n_rmean = len(rmean)
+        n_tamp = len(tamp)
+        n_ramp = len(ramp)
+        lookup = np.zeros((n_tmean, n_rmean, n_tamp, n_ramp))
+        
+        # Nasty nested loops for allocating time_over_lh one at a time
+        for ii in range(n_tmean):
+            print(f'{100*ii/n_tmean}%', end='\r')
+            for jj in range(n_rmean):
+                for kk in range(n_tamp):
+                    for ll in range(n_ramp):
+                        lookup[ii,jj,kk,ll] = self.time_over_lh(tmean[ii], rmean[jj], 
+                                                               tamp[kk], ramp[ll])
+                        
+        # Place into output dataset (divide by 60 to convert minutes to hours)
+        ds_out = xr.Dataset()
+        ds_out['tmean'] = tmean
+        ds_out['tamp'] = tamp
+        ds_out['rmean'] = rmean
+        ds_out['ramp'] = ramp
+        ds_out['hours_over_lh'] = (['tmean','rmean','tamp','ramp'], lookup/60)
+        return ds_out
+    
     @classmethod
     def calculate_from_files(cls, fp_td, fp_rh, fp_out = None,
                              td_name = 'tasmax', rh_name = 'hursmin', 
