@@ -1,7 +1,14 @@
 [![DOI](https://zenodo.org/badge/542107849.svg)](https://zenodo.org/badge/latestdoi/542107849)
 
 # lethal_heat
-Python object for calculating lethal heat stress from Temperature and RH. The methodology is described in [(Powis et al., 2023)](https://www.science.org/doi/10.1126/sciadv.adg9297)
+High temperature and humidity can have significant health impacts on the human body. In some cases, this can be lethal.
+This repository contains a small Python package for calculating lethal levels of heat from temperature and relative humidity.
+Example scripts for using this functionality with CMIP6 or ERA5 data are included in scripts.
+The methodology is described in [(Powis et al., 2023)](https://www.science.org/doi/10.1126/sciadv.adg9297) and based on
+experimental evidence by 
+
+![Lethal Heat Diagram](lethal_heat_illustration.svg)
+
 
 ## Installation
 Clone this repository to somewhere you like.
