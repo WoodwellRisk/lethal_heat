@@ -40,8 +40,8 @@ class Vecellio22():
     '''
     
     # These are the values to interpolate from the paper.
-    interp_td = [36,   38,   40,   44,   48,    50]
-    interp_rh = [66.3, 66.8, 50.3, 28.8, 20.14, 12.7]
+    interp_td = np.array([36,   38,   40,   44,   48,    50])
+    interp_rh = np.array([66.3, 66.8, 50.3, 28.8, 20.14, 12.7])
     
     def __init__(self, polyfit = True, degree = 1, **kwargs):
         
@@ -100,42 +100,53 @@ class Vecellio22():
         else:
             return distances
     
-    def plot(self, tdb=None, rh=None, figsize = (7,7), tbounds = None, rbounds = None):
+    def plot(self, tdb=None, rh=None, figsize = (7,7), 
+             tbounds = None, rbounds = None,
+             convert_to_f = False):
         ''' Plots the lethal region on a 2D plot.
         Optionally, you can add temperature, humidity pairs to see where
         they lie'''
         
+        f,a = plt.subplots(1,1, figsize=figsize)
+        
+        x = np.arange(0, 70, 0.01)
+        y = self.interp_func(x)
+        x_scat = self.interp_td
+        y_scat = self.interp_rh
+
+        if convert_to_f:
+            x = x * (9/5) + 32
+            x_scat = x_scat * (9/5) + 32
+
         if tbounds is None:
-            td_min = np.min(self.interp_td)
-            td_max = np.max(self.interp_td)
+            td_min = np.min(x_scat)
+            td_max = np.max(x_scat)
         else: 
             td_min = tbounds[0]
             td_max = tbounds[1]
             
         if rbounds is None:
-            rh_min = np.min(self.interp_rh)
-            rh_max = np.max(self.interp_rh)
+            rh_min = np.min(y_scat)
+            rh_max = np.max(y_scat)
         else:
             rh_min = rbounds[0]
             rh_max = rbounds[1]
         rh_range = rh_max - rh_min
         
-        f,a = plt.subplots(1,1, figsize=figsize)
-        
-        x = np.arange(td_min, td_max, 0.01)
-        y = self.interp_func(x)
-        
         a.fill_between(x, y, np.ones(len(x))*100, color='r', alpha=.25)
         a.plot(x, y, linewidth=3, linestyle='--', c='r', alpha=0.5)
-        a.scatter(self.interp_td, self.interp_rh, marker='s', s=100, c='r')
+        a.scatter(x_scat, y_scat, marker='s', s=100, c='r')
         a.set_xlim(td_min, td_max)
         a.set_ylim(rh_min, rh_max)
         a.grid()
-        a.set_xlabel('Dry Bulb Temperature', fontsize=15)
-        a.set_ylabel('Relative Humidity', fontsize=15)
+        a.set_xlabel('Temperature ($^{\circ} C$)', fontsize=15)
+        if convert_to_f:
+            a.set_xlabel('Temperature ($^{\circ} F$)', fontsize=15)
+        a.set_ylabel('Relative Humidity (%)', fontsize=15)
         
         if tdb is not None and rh is not None:
             a.scatter(tdb, rh, marker='x', s=25, c='k', alpha=0.4)
+        return f,a
         
     def map_to_data(self, tdb, rh):
         ''' Lazily calculates lethal heat over two chunked xarray datasets '''
