@@ -1,7 +1,7 @@
 [![DOI](https://zenodo.org/badge/542107849.svg)](https://zenodo.org/badge/latestdoi/542107849)
 
 # lethal_heat
-Python object for calculating lethal heat stress from Temperature and RH
+Python object for calculating lethal heat stress from Temperature and RH. The methodology is described in [(Powis et al., 2023)](https://www.science.org/doi/10.1126/sciadv.adg9297)
 
 ## Installation
 Clone this repository to somewhere you like.
