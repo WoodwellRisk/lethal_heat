@@ -5,7 +5,7 @@ High temperature and humidity can have significant health impacts on the human b
 This repository contains a small Python package for calculating lethal levels of heat from temperature and relative humidity.
 Example scripts for using this functionality with CMIP6 or ERA5 data are included in scripts.
 The methodology is described in [(Powis et al., 2023)](https://www.science.org/doi/10.1126/sciadv.adg9297) and based on
-experimental evidence by 
+experimental evidence by [(Vecellio et al., 2022)](https://pubmed.ncbi.nlm.nih.gov/34913738/).
 
 ![Lethal Heat Diagram](lethal_heat_illustration.svg)
 
