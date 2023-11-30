@@ -1,6 +1,6 @@
 [![DOI](https://zenodo.org/badge/542107849.svg)](https://zenodo.org/badge/latestdoi/542107849)
 
-# lethal_heat
+# lethal_heat: Functions and scripts for identifying lethal temperature and humidity
 High temperature and humidity can have significant health impacts on the human body. In some cases, this can be lethal.
 This repository contains a small Python package for calculating lethal levels of heat from temperature and relative humidity.
 Example scripts for using this functionality with CMIP6 or ERA5 data are included in scripts.
