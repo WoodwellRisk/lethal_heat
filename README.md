@@ -71,3 +71,20 @@ Vecellio22.calculate_from_files( fp_temperature,
 ```
 
 ### Creating and applying a lookup table
+It is often the case with climate data that you do not have hourly data available for analysis. If you have daily maxima, we can apply the analysis assuming that temperature and relative humidity are both sinusoids of opposite phase for each day of data. We can make this analysis even quicker by creating a lookup table that estimates how many hours of lethal heat there will be on any given day from the mean temperature and relative humidity and their daily amplitudes (half the range).
+
+```
+# Create a lookup table
+lookup = v22.create_lookup_table( np.arange(20,60,1), np.arange(20,100,1), 
+                                  np.arange(0,20,1), np.arange(0,20,1),)
+```
+
+This will create an xarray dataset with 4 dimensions, which can be quickly indexed to obtain an estimate of lethal heat hours. In this case, the resolution of each dimension is 1 degree or % of relative humidity. The finer this gets, the more accurate the lookup technique will be, but required memory will increase quickly.
+
+We can easily index the lookup table for a set of values as follows:
+
+```
+lethal_heat_hours = v22.lethal_heat_hours_from_lookup( lookup, tmean, rmean, tamp, ramp )
+```
+
+Here, `tmean`, `rmean`, `tamp` and `ramp` may be multidimensional arrays.
