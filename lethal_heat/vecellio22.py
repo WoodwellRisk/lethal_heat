@@ -179,15 +179,17 @@ class Vecellio22():
         else:
             return np.nan
         
-    def create_lookup_table( self, tmean, rmean, tamp, ramp ):
+    def create_lookup_table( self, tmean, rmean, tamp, ramp, fp_out=None ):
         ''' Creates a lookup table for quickly referencing the number of hours
-            per day that are lethal, according to this object.
+            per day that are lethal, according to this object. Input arrays should
+            have a constant increment, e.g. as created by numpy.arange().
             
             args
              tmean :: array of temperature means
              rmean :: array of RH means
              tamp :: array of temperature amplitudes
              ramp :: array of RH amplitudes
+             fp_out :: output filename (string). Default = no output file.
              
             output
              4-dimensional lookup table with dimension (tmean, rmean, tamp, ramp)
@@ -216,7 +218,57 @@ class Vecellio22():
         ds_out['rmean'] = rmean
         ds_out['ramp'] = ramp
         ds_out['hours_over_lh'] = (['tmean','rmean','tamp','ramp'], lookup/60)
+
+        if fp_out is not None:
+            ds_out.to_netcdf(fp_out)
         return ds_out
+
+    def lethal_heat_hours_from_lookup(self, lookup, 
+                                      tmean, rmean, 
+                                      tamp, ramp):
+        ''' 
+        
+        '''
+
+        # Create numpy arrays from lookup dimensions
+        lk_tmean = lookup.tmean.values
+        lk_rmean = lookup.rmean.values
+        lk_tamp = lookup.tamp.values
+        lk_ramp = lookup.ramp.values
+
+        # Get bounds of input arrays
+        tmean_min = np.min(lk_tmean)
+        rmean_min = np.min(lk_rmean)
+        tamp_min = np.min(lk_tamp)
+        ramp_min = np.min(lk_ramp)
+
+        # Get increments of input arrays
+        tmean_inc = lk_tmean[1] - lk_tmean[0]
+        rmean_inc = lk_rmean[1] - lk_rmean[0]
+        tamp_inc = lk_tamp[1] - lk_tamp[0]
+        ramp_inc = lk_ramp[1] - lk_ramp[0]
+
+        # Convert input arrays into indices using bounds and increments
+        lk_index_tmean = ( (tmean - tmean_min) / tmean_inc ).round().astype(int).clip(0)
+        lk_index_rmean = ( (rmean - rmean_min) / rmean_inc ).round().astype(int).clip(0)
+        lk_index_tamp = ( (tamp - tamp_min) / tamp_inc ).round().astype(int).clip(0)
+        lk_index_ramp = ( (ramp - ramp_min) / ramp_inc ).round().astype(int).clip(0)
+
+        # Flatten indexing arrays
+        original_shape = lk_index_tmean.shape
+        lk_index_tmean = xr.DataArray( lk_index_tmean.flatten() )
+        lk_index_rmean = xr.DataArray( lk_index_rmean.flatten() )
+        lk_index_tamp = xr.DataArray( lk_index_tamp.flatten() )
+        lk_index_ramp = xr.DataArray( lk_index_ramp.flatten() )
+        print( lk_index_tmean, lk_index_rmean, lk_index_tamp, lk_index_ramp )
+
+        # Index lookup table and reshape
+        lookup_indexed = lookup.hours_over_lh.isel( tmean = lk_index_tmean,
+                                                    rmean = lk_index_rmean,
+                                                    tamp = lk_index_tamp,
+                                                    ramp = lk_index_ramp )
+        lookup_indexed = lookup_indexed.values.reshape(original_shape)
+        return lookup_indexed
     
     @classmethod
     def calculate_from_files(cls, fp_td, fp_rh, fp_out = None,
