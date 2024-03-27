@@ -27,6 +27,7 @@ It works by interpolating the data in that paper into a smooth curve.
 Then, it takes temperature, humidity pairs and returns a boolean, or 
 array of booleans.
 
+### Basics
 Import lethal_heat:
 
 ```
@@ -51,6 +52,8 @@ Plot lethal region with temperature, humidity pairs on a plot with the lethal re
 v22.plot( tdb = temperature, rh = rel_humidity)
 ```
 
+### Applying to large datasets
+
 If you have data in netcdf, geotiff or zarr, you can calculate lethal heat lazily, in parallel and in chunks using something like:
 ```
 temperature = xr.open_dataset(filename_temp, chunks={'time':10})
@@ -66,3 +69,5 @@ Vecellio22.calculate_from_files( fp_temperature,
                                  fp_humidity, fp_out,
                                  chunks = {'time':100})
 ```
+
+### Creating and applying a lookup table
